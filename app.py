@@ -1,41 +1,41 @@
 import os
 import logging
 import json
-import openai  # OpenAI GPT Integration
+import openai  
 import alpaca_trade_api as tradeapi
 from flask import Flask, render_template, jsonify, request
 from dotenv import load_dotenv
 import pandas as pd
 
-# ✅ Load API keys from .env file (Fixing missing key issues)
+# ✅ Load API keys from .env file
 load_dotenv()
 API_KEY = os.getenv("APCA_API_KEY_ID") or "YOUR_ALPACA_API_KEY"
 API_SECRET = os.getenv("APCA_API_SECRET_KEY") or "YOUR_ALPACA_SECRET_KEY"
 BASE_URL = os.getenv("APCA_API_BASE_URL") or "https://paper-api.alpaca.markets"
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY") or "YOUR_OPENAI_KEY"
 
-# ✅ Ensure API credentials are loaded
+# Ensure API credentials are loaded
 if not API_KEY or not API_SECRET or not BASE_URL or not OPENAI_API_KEY:
     raise ValueError("❌ API keys are missing. Make sure your .env file is set up correctly.")
 
-# ✅ Initialize APIs
+# Initialize APIs
 api = tradeapi.REST(API_KEY, API_SECRET, BASE_URL, api_version='v2')
 openai.api_key = OPENAI_API_KEY
 
-# ✅ Flask app setup
+# Flask app setup
 app = Flask(__name__)
 
-# ✅ Store price history & trade history
+# Store price history & trade history
 price_history = {}
 trade_history = []
 
-# ✅ Configurations
+# Configurations
 BUY_THRESHOLD = -2.0  # Buy when price drops by 2%
 SELL_THRESHOLD = 2.5   # Sell when price increases by 2.5%
 TRADE_AMOUNT = 1       # Number of stocks to buy/sell
 MAX_HISTORY = 20       # Max historical data for analysis
 
-# ✅ Logging setup
+# Logging setup
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 
