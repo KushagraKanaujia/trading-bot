@@ -292,12 +292,6 @@ MIT License - see LICENSE file for details
 
 ⚠️ **Trading involves risk of loss.** This software is for educational purposes. Always test thoroughly in paper trading before using real money. Past performance does not guarantee future results.
 
-## Contact
-
-Kushagra Kanaujia - [GitHub](https://github.com/KushagraKanaujia)
-
-Project Link: https://github.com/KushagraKanaujia/trading-bot
-
 ---
 
 **Note**: Start with paper trading and test for at least 3 months before considering live trading.
