@@ -301,3 +301,23 @@ Project Link: https://github.com/KushagraKanaujia/trading-bot
 ---
 
 **Note**: Start with paper trading and test for at least 3 months before considering live trading.
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+### Development Setup
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run tests: `pytest`
+5. Submit a pull request
+
+### Coding Standards
+
+- Follow PEP 8 style guide
+- Add tests for new features
+- Update documentation as needed
+- Use type hints
+
