@@ -41,8 +41,9 @@ def test_calculate_correlation(portfolio_risk):
 
 def test_calculate_correlation_inverse(portfolio_risk):
     """Test correlation with inverse relationship."""
-    prices1 = [100, 101, 102, 103, 104, 105]
-    prices2 = [210, 208, 206, 204, 202, 200]  # Inverse correlation
+    # Correlation is computed on returns, so the moves must mirror each other
+    prices1 = [100, 102, 101, 104, 103, 106]
+    prices2 = [100, 98, 99, 96, 97, 94]  # Inverse day-to-day moves
 
     corr = portfolio_risk._calculate_correlation(prices1, prices2)
 

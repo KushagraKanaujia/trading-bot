@@ -10,9 +10,9 @@ from src.models import Base, Trade, Position, PriceHistory, PerformanceMetrics
 from src.models.trade import Side, TradeStatus
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def test_db_engine():
-    """Create a test database engine."""
+    """Create a fresh test database engine for each test (keeps tests isolated)."""
     # Use in-memory SQLite for testing
     engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)

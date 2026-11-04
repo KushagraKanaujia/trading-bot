@@ -1,127 +1,120 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI-Powered Trading Bot</title>
+    <title>Trading Bot Dashboard</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <style>
-        body {
-            background-color: #121212;
-            color: #ffffff;
-            font-family: 'Arial', sans-serif;
-            text-align: center;
-        }
-        .container {
-            margin-top: 50px;
-            max-width: 600px;
-            background-color: #1e1e1e;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0px 0px 15px rgba(255, 255, 255, 0.2);
-        }
-        input, button {
-            margin-top: 15px;
-        }
-        .trade-history {
-            text-align: left;
-            max-height: 250px;
-            overflow-y: auto;
-            padding: 10px;
-            border: 1px solid #333;
-            border-radius: 5px;
-            margin-top: 20px;
-            background-color: #222;
-        }
-        .btn {
-            font-size: 16px;
-            font-weight: bold;
-            padding: 12px;
-        }
-        .market-info {
-            font-size: 18px;
-            margin-bottom: 20px;
-        }
-        .loading {
-            font-size: 14px;
-            color: #aaa;
-            font-style: italic;
-        }
-        .trade-history li {
-            padding: 8px;
-            background-color: #2a2a2a;
-            border-radius: 5px;
-            margin-bottom: 5px;
-            list-style: none;
-            opacity: 0;
-            animation: fadeIn 0.5s forwards;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        body { background: #0f1115; }
+        .card { background: #171a21; border-color: #262a33; }
+        .stat { font-size: 1.4rem; font-weight: 600; }
+        .log { max-height: 260px; overflow-y: auto; font-family: ui-monospace, monospace; font-size: .85rem; }
+        .log li { list-style: none; padding: 4px 0; border-bottom: 1px solid #262a33; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>📈 AI-Powered Trading Bot</h1>
-        <p class="market-info"><strong>Market Status:</strong> <span id="market-status" class="loading">Loading...</span></p>
-        <p class="market-info"><strong>Account Balance:</strong> $<span id="account-balance" class="loading">Loading...</span></p>
+<div class="container py-4" style="max-width: 900px;">
+    <h1 class="h3 mb-1">Trading Bot Dashboard</h1>
+    <p class="text-secondary mb-3">Mean-reversion rule: <strong>buy</strong> when price drops 2% or more since the last check, <strong>sell</strong> the position when it rises 2.5% or more.</p>
 
-        <label for="symbol"><strong>Enter Stock Symbol:</strong></label>
-        <input type="text" id="symbol" class="form-control text-center" placeholder="e.g., AAPL, COIN, TSLA">
-        
-        <button class="btn btn-primary w-100" onclick="trackPrice()">🔍 Track Price</button>
-        <button class="btn btn-success w-100 mt-2" onclick="trade()">💰 Trade Now</button>
+    {% if demo_mode %}
+    <div class="alert alert-warning py-2">
+        <strong>Demo mode.</strong> No Alpaca keys found, so prices and the $100,000 account are simulated in memory. Add paper keys to <code>.env</code> to use Alpaca paper trading.
+    </div>
+    {% endif %}
 
-        <div class="trade-history">
-            <h4>Trade History</h4>
-            <ul id="trade-history-list"></ul>
-        </div>
+    <div class="row g-3 mb-3">
+        <div class="col-6"><div class="card p-3"><div class="text-secondary small">Market status</div><div class="stat" id="market-status">...</div></div></div>
+        <div class="col-6"><div class="card p-3"><div class="text-secondary small">Account equity</div><div class="stat" id="account-balance">...</div></div></div>
     </div>
 
-    <script>
-        function fetchMarketStatus() {
-            $.get("/market_status", function(data) {
-                $("#market-status").text(data.status);
-                $("#account-balance").text(data.balance);
-            });
-        }
+    <div class="card p-3 mb-3">
+        <div class="input-group">
+            <input type="text" id="symbol" class="form-control" placeholder="Stock symbol, e.g. AAPL" value="AAPL">
+            <button class="btn btn-primary" onclick="trackPrice()">Track price</button>
+            <button class="btn btn-success" onclick="trade()">Run strategy</button>
+            <button class="btn btn-outline-secondary" id="auto-btn" onclick="toggleAuto()">Auto (5s)</button>
+        </div>
+        <div class="small text-secondary mt-2" id="message">Track a symbol at least twice, then run the strategy.</div>
+    </div>
 
-        function trackPrice() {
-            var symbol = $("#symbol").val().toUpperCase();
-            if (!symbol) {
-                alert("⚠️ Please enter a valid stock symbol!");
-                return;
-            }
-            $.get(`/track/${symbol}`, function(data) {
-                if (data.error) {
-                    alert("⚠️ " + data.error);
-                } else {
-                    alert(`✅ Tracking ${symbol}: Latest price is $${data.latest_price}`);
-                }
-            });
-        }
+    <div class="card p-3 mb-3"><canvas id="chart" height="110"></canvas></div>
 
-        function trade() {
-            var symbol = $("#symbol").val().toUpperCase();
-            if (!symbol) {
-                alert("⚠️ Please enter a valid stock symbol!");
-                return;
-            }
-            $.get(`/trade/${symbol}`, function(data) {
-                if (data.status === "BUY order placed" || data.status === "SELL order placed") {
-                    $("#trade-history-list").prepend(`<li>✅ ${data.status}: ${data.symbol} at $${data.price}</li>`);
-                } else {
-                    alert("⚠️ " + (data.error || "No trade executed"));
-                }
-            });
-        }
+    <div class="card p-3">
+        <h2 class="h6">Activity</h2>
+        <ul class="log ps-0 mb-0" id="trade-history-list"></ul>
+    </div>
+</div>
 
-        $(document).ready(function() {
-            fetchMarketStatus();
-        });
-    </script>
+<script>
+    const $ = (id) => document.getElementById(id);
+    const chart = new Chart($("chart"), {
+        type: "line",
+        data: { labels: [], datasets: [{ label: "Price", data: [], borderColor: "#4f8cff", tension: .25, pointRadius: 2 }] },
+        options: { animation: false, plugins: { legend: { display: false } }, scales: { x: { display: false } } }
+    });
+    let autoTimer = null;
+
+    function sym() { return $("symbol").value.trim().toUpperCase(); }
+    function log(text, cls = "") {
+        const li = document.createElement("li");
+        li.className = cls;
+        li.textContent = new Date().toLocaleTimeString() + "  " + text;
+        $("trade-history-list").prepend(li);
+    }
+    function draw(history) {
+        chart.data.labels = history.map((_, i) => i + 1);
+        chart.data.datasets[0].data = history;
+        chart.update();
+    }
+    async function getJSON(url) { const r = await fetch(url); return r.json(); }
+
+    async function fetchMarketStatus() {
+        const data = await getJSON("/market_status");
+        $("market-status").textContent = data.status || "Unavailable";
+        $("account-balance").textContent = data.balance ? "$" + Number(data.balance).toLocaleString(undefined, { maximumFractionDigits: 2 }) : "-";
+    }
+
+    async function trackPrice() {
+        const s = sym();
+        if (!s) { $("message").textContent = "Enter a stock symbol first."; return; }
+        const data = await getJSON(`/track/${s}`);
+        if (data.error) { $("message").textContent = data.error; return; }
+        $("message").textContent = `Tracking ${s}: latest price $${data.latest_price}`;
+        draw(data.history);
+    }
+
+    async function trade() {
+        const s = sym();
+        if (!s) { $("message").textContent = "Enter a stock symbol first."; return; }
+        const data = await getJSON(`/trade/${s}`);
+        if (data.error) { $("message").textContent = data.error; return; }
+        const change = data.price_change !== undefined ? ` (${data.price_change.toFixed(2)}%)` : "";
+        if (data.status.includes("order placed")) {
+            log(`${data.status}: ${data.symbol} at $${data.price}${change}`, data.status.startsWith("BUY") ? "text-success" : "text-danger");
+        } else {
+            log(`${data.status}${change}`, "text-secondary");
+        }
+        $("message").textContent = data.status + change;
+        const h = await getJSON(`/history/${s}`);
+        draw(h.history);
+        fetchMarketStatus();
+    }
+
+    async function toggleAuto() {
+        if (autoTimer) {
+            clearInterval(autoTimer); autoTimer = null;
+            $("auto-btn").textContent = "Auto (5s)";
+            return;
+        }
+        $("auto-btn").textContent = "Stop auto";
+        await trackPrice(); await trackPrice();
+        autoTimer = setInterval(trade, 5000);
+    }
+
+    fetchMarketStatus();
+</script>
 </body>
 </html>
