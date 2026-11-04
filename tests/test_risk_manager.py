@@ -79,8 +79,10 @@ def test_can_open_position_too_large(risk_manager):
     assert "Position size exceeds" in reason
 
 
-def test_can_open_position_exceeds_exposure(risk_manager):
+def test_can_open_position_exceeds_exposure(risk_manager, monkeypatch):
     """Test rejection when portfolio exposure limit exceeded."""
+    # Relax the per-position cap so the portfolio exposure check is the one that trips
+    monkeypatch.setattr(risk_manager.settings, "max_position_size", 1.0)
     can_trade, reason = risk_manager.can_open_position(
         symbol="AAPL",
         side="buy",

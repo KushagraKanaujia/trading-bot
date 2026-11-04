@@ -21,6 +21,7 @@ torch==2.1.2
 # Web Framework
 flask==3.0.0
 gunicorn==21.2.0
+apscheduler==3.10.4
 
 # Task Queue & Caching (optional)
 redis==5.0.1
